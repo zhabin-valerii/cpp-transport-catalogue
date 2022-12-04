@@ -5,11 +5,19 @@
 #include <sstream>
 
 using namespace transport_catalogue;
+void InputStat(transport_catalogue::TransportCatalogue& catalogue) {
+	std::string num;
+	std::getline(std::cin, num);
+	int count = std::stoi(num);
+	OutInfo(count, std::cin, catalogue);
+}
 
 void PrintBusInfo(RouteInfo& info) {
-	std::cout << "Bus " << info.name << ": " << info.num_of_stops << " stops on route, "
+	std::stringstream out;
+	out << "Bus " << info.name << ": " << info.num_of_stops << " stops on route, "
 	<< info.num_of_unique_stops << " unique stops, " << std::setprecision(6) << info.route_length
-	<< " route length, " << info.curvature << " curvature" << std::endl;
+	<< " route length, " << info.curvature << " curvature";
+	std::cout << out.str() << std::endl;
 }
 
 void PrintStopInfo(std::string name, std::set<std::string_view>& buses) {
@@ -26,15 +34,21 @@ void PrintStopInfo(std::string name, std::set<std::string_view>& buses) {
 	std::cout << out.str() << std::endl;
 }
 
+void CutRequest(std::string& text, std::vector<std::string>& request) {
+	request.push_back(text.substr(0, text.find(' ')));
+	text = text.substr(text.find(' ') + 1, text.size());
+	while (text[text.size() - 1] == ' ') {
+		text = text.substr(0, text.size()-1);
+	}
+	request.push_back(text);
+}
+
 void OutInfo(int count, std::istream& line, TransportCatalogue& cataloge) {
 	std::string text;
 	int i = 0;
-	
-	//std::vector<std::tuple<std::string, int, int, double>> result(count);
 	while (i < count && std::getline(line, text)) {
 		std::vector<std::string> request;
-		request.push_back(text.substr(0, text.find(' ')));
-		request.push_back(text.substr(text.find(' ') + 1, text.find_last_not_of(' ')));
+		CutRequest(text, request);
 		if (request[0] == "Bus") {
 			try {
 				auto temp = cataloge.GetBusInfo(request[1]);

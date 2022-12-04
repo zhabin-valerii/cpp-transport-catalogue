@@ -29,7 +29,7 @@ namespace transport_catalogue {
 		return rhs.name_ == this->name_;
 	}
 
-	void TransportCatalogue::Addstop(const std::string& name, Coordinates& coordinate) {
+	void TransportCatalogue::AddStop(const std::string& name, const Coordinates& coordinate) {
 		if (stops_name_.find(name) != stops_name_.end()) {
 			std::cout << "the stop \"" << name << "\" is already there." << std::endl;
 			return;
@@ -39,7 +39,7 @@ namespace transport_catalogue {
 		stops_name_[stops_.back().name_] = &stops_.back();
 	}
 
-	void TransportCatalogue::AddRoute(const std::string& name, RouteType type_route_, std::vector<std::string>& stops_str) {
+	void TransportCatalogue::AddRoute(const std::string& name, RouteType type_route_, const std::vector<std::string>& stops_str) {
 		std::vector<Stop*> stops(stops_str.size());
 		for (int i = 0; i < stops_str.size(); ++i) {
 			stops[i] = stops_name_.at(stops_str[i]);

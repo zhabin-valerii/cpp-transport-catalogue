@@ -41,7 +41,7 @@ namespace transport_catalogue {
 		struct Stop {
 			Stop() {}
 			Stop(const std::string& name, Coordinates coordinates);
-			bool operator== (const Stop& rhs);
+			bool operator==(const Stop& rhs);
 
 			std::string name_;
 			Coordinates coordinates_;
@@ -50,7 +50,7 @@ namespace transport_catalogue {
 		struct Route {
 			Route() {}
 			Route(const std::string& name, RouteType type_route, std::vector<Stop*>& route);
-			bool operator== (const Route& rhs);
+			bool operator==(const Route& rhs);
 
 			std::string name_;
 			RouteType type_route_ = RouteType::UNKNOWN;
@@ -66,8 +66,8 @@ namespace transport_catalogue {
 		std::unordered_map<std::string_view, std::set<std::string_view>> buses_on_stops_;
 		std::unordered_map<std::string_view, std::unordered_map<std::string_view, int>> distances_;
 	public:
-		void Addstop(const std::string& name, Coordinates& coordinate);
-		void AddRoute(const std::string& name, RouteType type_route_, std::vector<std::string>& stops_str);
+		void AddStop(const std::string& name, const Coordinates& coordinate);
+		void AddRoute(const std::string& name, RouteType type_route_, const std::vector<std::string>& stops_str);
 
 		Stop* FindStop(const std::string& name) const;
 		Route* FindRoute(const std::string& name) const;
