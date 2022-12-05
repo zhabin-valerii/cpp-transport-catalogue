@@ -21,11 +21,11 @@ namespace transport_catalogue {
 	};
 
 	struct RouteInfo {
-		std::string name;//
-		RouteType type_route;//
-		int num_of_stops = 0;//
-		int num_of_unique_stops = 0;//
-		int route_length = 0;//
+		std::string name;
+		RouteType type_route;
+		int num_of_stops = 0;
+		int num_of_unique_stops = 0;
+		int route_length = 0;
 		double curvature = 0.0;
 	};
 
