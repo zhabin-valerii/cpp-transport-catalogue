@@ -1,19 +1,14 @@
-#include "transport_catalogue.h"
-#include "input_reader.h"
-#include "stat_reader.h"
+#include "request_handler.h"
 
 #include <iostream>
-#include <string>
-#include <cassert>
-#include <tuple>
-#include <iomanip>
+//#include <Windows.h>
 
 using namespace transport_catalogue;
-using namespace input_reader;
-using namespace std::string_literals;
 
 int main() {
+	//SetConsoleCP(1251);
+	//SetConsoleOutputCP(1251);
 	TransportCatalogue catalogue;
-	InputRequest(catalogue);
-	InputStat(catalogue);
+	RequestHandler handler(catalogue);
+	handler.ProcessRequest(std::cin, std::cout);
 }
