@@ -31,7 +31,6 @@ namespace transport_catalogue {
 			return renderer.RenderMap(catalogue_);
 		}
 		else {
-			//std::cerr << "Can't find rendering settings"s << std::endl;
 			return {};
 		}
 	}

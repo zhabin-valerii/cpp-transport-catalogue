@@ -44,7 +44,7 @@ namespace json {
         bool IsPureDouble() const;
         bool IsString() const;
         bool IsArray() const;
-        bool IsMap() const;
+        bool IsDict() const;
 
         const Value& GetValue() const;
         int AsInt() const;
@@ -52,7 +52,7 @@ namespace json {
         double AsDouble() const;
         const std::string& AsString() const;
         const Array& AsArray() const;
-        const Dict& AsMap() const;
+        const Dict& AsDict() const;
 
         friend bool operator==(const Node& lhs, const Node& rhs);
         friend bool operator!=(const Node& lhs, const Node& rhs);

@@ -345,7 +345,7 @@ namespace json {
     bool Node::IsArray() const {
         return std::holds_alternative<Array>(*this);
     }
-    bool Node::IsMap() const {
+    bool Node::IsDict() const {
         return std::holds_alternative<Dict>(*this);
     }
 
@@ -393,7 +393,7 @@ namespace json {
         throw std::logic_error("Impossible to parse node as Array"s);
     }
 
-    const Dict& Node::AsMap() const {
+    const Dict& Node::AsDict() const {
         if (auto value = std::get_if<Dict>(this)) {
             return *value;
         }

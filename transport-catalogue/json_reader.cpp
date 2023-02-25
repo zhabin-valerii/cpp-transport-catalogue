@@ -9,8 +9,8 @@ namespace json_reader {
 	JsonReader::JsonReader(std::istream& input) : data_(json::Load(input)) {}
 
 	void JsonReader::LoadData(transport_catalogue::TransportCatalogue& catalogue) const {
-		if (data_.GetRoot().IsMap() && data_.GetRoot().AsMap().count("base_requests"s) != 0) {
-			auto& base_request = data_.GetRoot().AsMap().at("base_requests"s);
+		if (data_.GetRoot().IsDict() && data_.GetRoot().AsDict().count("base_requests"s) != 0) {
+			auto& base_request = data_.GetRoot().AsDict().at("base_requests"s);
 			if (base_request.IsArray()) {
 				LoadStops(base_request.AsArray(), catalogue);
 				LoadRoutes(base_request.AsArray(), catalogue);
@@ -20,10 +20,10 @@ namespace json_reader {
 	}
 
 	std::optional<renderer::RenderSettings> JsonReader::LoadRenderSettings() const {
-		if (data_.GetRoot().IsMap() && data_.GetRoot().AsMap().count("render_settings"s) > 0) {
-			auto& render_settings = data_.GetRoot().AsMap().at("render_settings"s);
-			if (render_settings.IsMap()) {
-				return LoadSettings(render_settings.AsMap());
+		if (data_.GetRoot().IsDict() && data_.GetRoot().AsDict().count("render_settings"s) > 0) {
+			auto& render_settings = data_.GetRoot().AsDict().at("render_settings"s);
+			if (render_settings.IsDict()) {
+				return LoadSettings(render_settings.AsDict());
 			}
 		}
 		return std::nullopt;
@@ -75,9 +75,9 @@ namespace json_reader {
 	void JsonReader::LoadStops(const json::Array& data, transport_catalogue::TransportCatalogue& catalogue) {
 		for (const auto& elem : data) {
 			if (IsStop(elem)) {
-				const auto& name = elem.AsMap().at("name"s).AsString();
-				const auto lat = elem.AsMap().at("latitude"s).AsDouble();
-				const auto lng = elem.AsMap().at("longitude"s).AsDouble();
+				const auto& name = elem.AsDict().at("name"s).AsString();
+				const auto lat = elem.AsDict().at("latitude"s).AsDouble();
+				const auto lng = elem.AsDict().at("longitude"s).AsDouble();
 				catalogue.AddStop(name, { lat,lng });
 			}
 		}
@@ -86,15 +86,15 @@ namespace json_reader {
 	void JsonReader::LoadRoutes(const json::Array& data, transport_catalogue::TransportCatalogue& catalogue) {
 		for (const auto& elem : data) {
 			if (IsRoute(elem)) {
-				const auto& name = elem.AsMap().at("name"s).AsString();
+				const auto& name = elem.AsDict().at("name"s).AsString();
 				domain::RouteType type;
-				if (elem.AsMap().at("is_roundtrip"s).AsBool()) {
+				if (elem.AsDict().at("is_roundtrip"s).AsBool()) {
 					type = domain::RouteType::CIRCLE;
 				}
 				else {
 					type = domain::RouteType::LINEAR;
 				}
-				const auto stops = elem.AsMap().at("stops"s).AsArray();
+				const auto stops = elem.AsDict().at("stops"s).AsArray();
 				std::vector<std::string> stops_names;
 				for (const auto& stop_name : stops) {
 					if (stop_name.IsString()) {
@@ -105,11 +105,12 @@ namespace json_reader {
 			}
 		}
 	}
+
 	void JsonReader::LoadDistances(const json::Array& data, transport_catalogue::TransportCatalogue& catalogue) {
 		for (const auto& elem : data) {
 			if (IsStop(elem)) {
-				const auto& from = elem.AsMap().at("name"s).AsString();
-				const auto distances = elem.AsMap().at("road_distances").AsMap();
+				const auto& from = elem.AsDict().at("name"s).AsString();
+				const auto distances = elem.AsDict().at("road_distances").AsDict();
 				for (const auto& [to, dist] : distances) {
 					catalogue.SetDistance(from, to, dist.AsInt());
 				}
@@ -118,10 +119,10 @@ namespace json_reader {
 	}
 
 	bool JsonReader::IsStop(const json::Node& node) {
-		if (!node.IsMap()) {
+		if (!node.IsDict()) {
 			return false;
 		}
-		const auto& stop = node.AsMap();
+		const auto& stop = node.AsDict();
 		if (stop.count("type"s) == 0 || stop.at("type"s) != "Stop"s) {
 			return false;
 		}
@@ -134,17 +135,17 @@ namespace json_reader {
 		if (stop.count("longitude"s) == 0 || !(stop.at("longitude"s).IsDouble())) {
 			return false;
 		}
-		if (stop.count("road_distances"s) == 0 || (stop.at("longitude"s).IsMap())) {
+		if (stop.count("road_distances"s) == 0 || (stop.at("longitude"s).IsDict())) {
 			return false;
 		}
 		return true;
 	}
 
 	bool JsonReader::IsRoute(const json::Node& node) {
-		if (!node.IsMap()) {
+		if (!node.IsDict()) {
 			return false;
 		}
-		const auto& bus = node.AsMap();
+		const auto& bus = node.AsDict();
 		if (bus.count("type"s) == 0 || bus.at("type"s) != "Bus"s) {
 			return false;
 		}
@@ -163,8 +164,8 @@ namespace json_reader {
 	void JsonReader::AnsverRequests(const transport_catalogue::TransportCatalogue& catalogue,
 		const renderer::RenderSettings& render_settings,
 		std::ostream& out) const {
-		if (data_.GetRoot().IsMap() && data_.GetRoot().AsMap().count("stat_requests"s) != 0) {
-			auto& requests = data_.GetRoot().AsMap().at("stat_requests"s);
+		if (data_.GetRoot().IsDict() && data_.GetRoot().AsDict().count("stat_requests"s) != 0) {
+			auto& requests = data_.GetRoot().AsDict().at("stat_requests"s);
 			if (requests.IsArray()) {
 				json::Array ansvers = LoadAnsvers(requests.AsArray(),catalogue, render_settings);
 				json::Print(json::Document(json::Node{ ansvers }), out);
@@ -178,13 +179,13 @@ namespace json_reader {
 		json::Array ansver;
 		for (const auto& request : requests) {
 			if (IsRouteRequest(request)) {
-				ansver.push_back(LoadRouteAnsver(request.AsMap(), catalogue));
+				ansver.push_back(LoadRouteAnsver(request.AsDict(), catalogue));
 			}
 			else if (IsStopRequest(request)) {
-				ansver.push_back(LoadStopAnswer(request.AsMap(), catalogue));
+				ansver.push_back(LoadStopAnswer(request.AsDict(), catalogue));
 			}
 			else if (IsMapRequest(request)) {
-				ansver.push_back(LoadMapAnswer(request.AsMap(), catalogue, render_settings));
+				ansver.push_back(LoadMapAnswer(request.AsDict(), catalogue, render_settings));
 			}
 		}
 		return ansver;
@@ -194,14 +195,14 @@ namespace json_reader {
 		int id = request.at("id"s).AsInt();
 		const auto& name = request.at("name"s).AsString();
 		try {
-			auto info = catalogue.GetRouteInfo(name);
-			json::Dict ansver;
-			ansver.emplace("request_id"s, id);
-			ansver.emplace("curvature"s, info.curvature);
-			ansver.emplace("route_length"s, info.route_length);
-			ansver.emplace("stop_count"s, info.num_of_stops);
-			ansver.emplace("unique_stop_count"s, info.num_of_unique_stops);
-			return ansver;
+			auto answer = catalogue.GetRouteInfo(name);
+			return json::Builder{}.StartDict().
+				Key("request_id").Value(id).
+				Key("curvature").Value(answer.curvature).
+				Key("route_length").Value(answer.route_length).
+				Key("stop_count").Value(answer.num_of_stops).
+				Key("unique_stop_count").Value(answer.num_of_unique_stops).
+				EndDict().Build().AsDict();
 		}
 		catch(std::out_of_range&) {
 			return ErrorMessage(id);
@@ -219,10 +220,10 @@ namespace json_reader {
 					buses.push_back(std::string(bus_name));
 				}
 			}
-			json::Dict ansver;
-			ansver.emplace("request_id"s, id);
-			ansver.emplace("buses"s, buses);
-			return ansver;
+			return json::Builder{}.StartDict().
+				Key("request_id"s).Value(id).
+				Key("buses"s).Value(buses).
+				EndDict().Build().AsDict();
 		}
 		catch (std::out_of_range&) {
 			return ErrorMessage(id);
@@ -236,24 +237,24 @@ namespace json_reader {
 		renderer::MapRenderer renderer;
 		renderer.SetSettings(render_settings);
 		renderer.RenderMap(catalogue).Render(out);
-		json::Dict ansver;
-		ansver.emplace("request_id"s, id);
-		ansver.emplace("map"s, out.str());
-		return ansver;
+		return json::Builder{}.StartDict().
+			Key("request_id"s).Value(id).
+			Key("map"s).Value(out.str()).
+			EndDict().Build().AsDict();
 	}
 
 	json::Dict JsonReader::ErrorMessage(int id) {
-		json::Dict message;
-		message.emplace("request_id"s, id);
-		message.emplace("error_message"s, "not found"s);
-		return message;
+		return json::Builder{}.StartDict().
+			Key("request_id"s).Value(id).
+			Key("error_message"s).Value("not found"s).
+			EndDict().Build().AsDict();
 	}
 
 	bool JsonReader::IsRouteRequest(const json::Node& node) {
-		if (!node.IsMap()) {
+		if (!node.IsDict()) {
 			return false;
 		}
-		const auto& request = node.AsMap();
+		const auto& request = node.AsDict();
 		if (request.count("type"s) == 0 || request.at("type"s) != "Bus"s) {
 			return false;
 		}
@@ -267,10 +268,10 @@ namespace json_reader {
 	}
 
 	bool JsonReader::IsStopRequest(const json::Node& node) {
-		if (!node.IsMap()) {
+		if (!node.IsDict()) {
 			return false;
 		}
-		const auto& request = node.AsMap();
+		const auto& request = node.AsDict();
 		if (request.count("type"s) == 0 || request.at("type"s) != "Stop"s) {
 			return false;
 		}
@@ -284,10 +285,10 @@ namespace json_reader {
 	}
 
 	bool JsonReader::IsMapRequest(const json::Node& node) {
-		if (!node.IsMap()) {
+		if (!node.IsDict()) {
 			return false;
 		}
-		const auto& request = node.AsMap();
+		const auto& request = node.AsDict();
 		if (request.count("type"s) == 0 || request.at("type"s) != "Map"s) {
 			return false;
 		}
