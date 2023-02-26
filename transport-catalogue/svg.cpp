@@ -44,7 +44,7 @@ namespace svg {
         return out;
     }
 
-    std::ostream& operator<<(std::ostream& out, const StrokeLineCap& cap) {
+    std::ostream& operator<<(std::ostream& out, const StrokeLineCap cap) {
         switch (cap){
             case StrokeLineCap::BUTT: return out << "butt"s;
             case StrokeLineCap::ROUND: return out << "round"s;
@@ -53,7 +53,7 @@ namespace svg {
         return out;
     }
 
-    std::ostream& operator<<(std::ostream& out, const StrokeLineJoin& join) {
+    std::ostream& operator<<(std::ostream& out, const StrokeLineJoin join) {
         switch (join) {
             case StrokeLineJoin::ARCS: return out << "arcs"s;
             case StrokeLineJoin::BEVEL: return out << "bevel"s;
@@ -126,17 +126,17 @@ namespace svg {
         return *this;
     }
 
-    Text& Text::SetFontFamily(std::string font_family) {
+    Text& Text::SetFontFamily(const std::string& font_family) {
         font_family_ = font_family;
         return *this;
     }
 
-    Text& Text::SetFontWeight(std::string font_weight) {
+    Text& Text::SetFontWeight(const std::string& font_weight) {
         font_weight_ = font_weight;
         return *this;
     }
 
-    Text& Text::SetData(std::string data) {
+    Text& Text::SetData(const std::string& data) {
         data_ = data;
         return *this;
     }

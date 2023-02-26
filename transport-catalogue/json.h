@@ -20,22 +20,13 @@ namespace json {
         using runtime_error::runtime_error;
     };
 
-    struct NodeOverloaded {
-        std::ostream& out;
-
-        void operator()(std::nullptr_t) const;
-        void operator()(bool value) const;
-        void operator()(int value) const;
-        void operator()(double value) const;
-        void operator()(const std::string& value) const;
-        void operator()(const Dict& map) const;
-        void operator()(const Array& value) const;
-    };
-
     class Node final: private std::variant<std::nullptr_t, bool, int, double, std::string, Dict, Array> {
     public:
         using variant::variant;
         using Value = variant;
+
+        Node() = default;
+        Node(Value& value);
 
         bool IsNull() const;
         bool IsBool() const;
@@ -52,7 +43,9 @@ namespace json {
         double AsDouble() const;
         const std::string& AsString() const;
         const Array& AsArray() const;
+        Array& AsArray();
         const Dict& AsDict() const;
+        Dict& AsDict();
 
         friend bool operator==(const Node& lhs, const Node& rhs);
         friend bool operator!=(const Node& lhs, const Node& rhs);

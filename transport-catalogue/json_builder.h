@@ -55,6 +55,8 @@ namespace json {
 		KeyValueItemContext Value(Node::Value value);
 		using ItemContext::StartDict;
 		using ItemContext::StartArray;
+		// если убрать эти поределения, они, почему-то не подтягиваются и компилятор ругается не несоответствие
+		//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	};
 

@@ -252,6 +252,18 @@ namespace json {
 
     }  // namespace
 
+    struct NodeOverloaded {
+        std::ostream& out;
+
+        void operator()(std::nullptr_t) const;
+        void operator()(bool value) const;
+        void operator()(int value) const;
+        void operator()(double value) const;
+        void operator()(const std::string& value) const;
+        void operator()(const Dict& map) const;
+        void operator()(const Array& value) const;
+    };
+
     void NodeOverloaded::operator()(std::nullptr_t) const{
         out << "null"s;
     }
@@ -297,12 +309,14 @@ namespace json {
 
     void NodeOverloaded::operator()(const Dict& map) const {
         out << '{';
-        int count = 0;
+        bool is_first = true;
         for (const auto& [key, value] : map) {
-            if (count++ != 0) {
+            if (is_first) {
                 out << ", "s;
+                is_first = false;
             }
-            std::visit(NodeOverloaded{out}, Node{key}.GetValue());
+            NodeOverloaded node{ out };
+            node(key);
             out << ':';
             std::visit(NodeOverloaded{ out }, value.GetValue());
         }
@@ -321,7 +335,10 @@ namespace json {
         out << ']';
     }
 
-    //
+    Node::Node(Value& value) {
+        *this = value;
+    }
+    
     //----------bool methods---------
 
     bool Node::IsNull() const {
@@ -392,10 +409,23 @@ namespace json {
         }
         throw std::logic_error("Impossible to parse node as Array"s);
     }
+    Array& Node::AsArray() {
+        if (auto value = std::get_if<Array>(this)) {
+            return const_cast<Array&>(*value);
+        }
+        throw std::logic_error("Impossible to parse node as Array"s);
+    }
 
     const Dict& Node::AsDict() const {
         if (auto value = std::get_if<Dict>(this)) {
             return *value;
+        }
+        throw std::logic_error("Impossible to parse node as Dict"s);
+    }
+
+    Dict& Node::AsDict() {
+        if (auto value = std::get_if<Dict>(this)) {
+            return const_cast<Dict&>(*value);
         }
         throw std::logic_error("Impossible to parse node as Dict"s);
     }

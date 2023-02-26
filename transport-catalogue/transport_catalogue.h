@@ -19,7 +19,7 @@ namespace transport_catalogue {
 
 	class TransportCatalogue {
 	public:
-		void AddStop(const std::string& name, const Coordinates& coordinate);
+		void AddStop(const std::string& name, const Coordinates coordinate);
 		void AddRoute(const std::string& name, domain::RouteType type_route_, const std::vector<std::string>& stops_str);
 
 		domain::Stop* FindStop(const std::string& name) const;
@@ -50,6 +50,7 @@ namespace transport_catalogue {
 		std::unordered_map<std::string_view, domain::Stop*> stops_name_;
 
 		std::unordered_map<std::string_view, std::set<std::string_view>> buses_on_stops_;
-		std::unordered_map<std::string_view, std::unordered_map<std::string_view, int>> distances_;
+		std::unordered_map<std::pair<std::string_view, std::string_view>,int, domain::StopHasher> distances_;
+		//std::unordered_map<std::string_view, std::unordered_map<std::string_view, int>> distances_;
 	};
 }//transport_catalogue 

@@ -1,6 +1,6 @@
-#include "json_reader.h"
-
 #include <tuple>
+
+#include "json_reader.h"
 
 namespace json_reader {
 	using namespace geo;
@@ -9,8 +9,9 @@ namespace json_reader {
 	JsonReader::JsonReader(std::istream& input) : data_(json::Load(input)) {}
 
 	void JsonReader::LoadData(transport_catalogue::TransportCatalogue& catalogue) const {
-		if (data_.GetRoot().IsDict() && data_.GetRoot().AsDict().count("base_requests"s) != 0) {
-			auto& base_request = data_.GetRoot().AsDict().at("base_requests"s);
+		auto get_root = data_.GetRoot();
+		if (get_root.IsDict() && get_root.AsDict().count("base_requests"s) != 0) {
+			auto& base_request = get_root.AsDict().at("base_requests"s);
 			if (base_request.IsArray()) {
 				LoadStops(base_request.AsArray(), catalogue);
 				LoadRoutes(base_request.AsArray(), catalogue);
@@ -31,6 +32,8 @@ namespace json_reader {
 
 	renderer::RenderSettings JsonReader::LoadSettings(const json::Dict& data) const {
 		renderer::RenderSettings result;
+		//Не очень понимаю как это сделать Мы же последовательно заполняем result 
+	    //и перед этим проверяем на наличие данных.
 		if (data.count("width"s) != 0 && data.at("width"s).IsDouble()) {
 			result.size.x = data.at("width"s).AsDouble();
 		}
@@ -74,91 +77,42 @@ namespace json_reader {
 
 	void JsonReader::LoadStops(const json::Array& data, transport_catalogue::TransportCatalogue& catalogue) {
 		for (const auto& elem : data) {
-			if (IsStop(elem)) {
-				const auto& name = elem.AsDict().at("name"s).AsString();
-				const auto lat = elem.AsDict().at("latitude"s).AsDouble();
-				const auto lng = elem.AsDict().at("longitude"s).AsDouble();
-				catalogue.AddStop(name, { lat,lng });
-			}
+			const auto& name = elem.AsDict().at("name"s).AsString();
+			const auto lat = elem.AsDict().at("latitude"s).AsDouble();
+			const auto lng = elem.AsDict().at("longitude"s).AsDouble();
+			catalogue.AddStop(name, { lat,lng });
 		}
 	}
 
 	void JsonReader::LoadRoutes(const json::Array& data, transport_catalogue::TransportCatalogue& catalogue) {
 		for (const auto& elem : data) {
-			if (IsRoute(elem)) {
-				const auto& name = elem.AsDict().at("name"s).AsString();
-				domain::RouteType type;
-				if (elem.AsDict().at("is_roundtrip"s).AsBool()) {
-					type = domain::RouteType::CIRCLE;
-				}
-				else {
-					type = domain::RouteType::LINEAR;
-				}
-				const auto stops = elem.AsDict().at("stops"s).AsArray();
-				std::vector<std::string> stops_names;
-				for (const auto& stop_name : stops) {
-					if (stop_name.IsString()) {
-						stops_names.push_back(stop_name.AsString());
-					}
-				}
-				catalogue.AddRoute(name, type, stops_names);
+			const auto& name = elem.AsDict().at("name"s).AsString();
+			domain::RouteType type;
+			if (elem.AsDict().at("is_roundtrip"s).AsBool()) {
+				type = domain::RouteType::CIRCLE;
 			}
+			else {
+				type = domain::RouteType::LINEAR;
+			}
+			const auto stops = elem.AsDict().at("stops"s).AsArray();
+			std::vector<std::string> stops_names;
+			for (const auto& stop_name : stops) {
+				if (stop_name.IsString()) {
+					stops_names.push_back(stop_name.AsString());
+				}
+			}
+			catalogue.AddRoute(name, type, stops_names);
 		}
 	}
 
 	void JsonReader::LoadDistances(const json::Array& data, transport_catalogue::TransportCatalogue& catalogue) {
 		for (const auto& elem : data) {
-			if (IsStop(elem)) {
-				const auto& from = elem.AsDict().at("name"s).AsString();
-				const auto distances = elem.AsDict().at("road_distances").AsDict();
-				for (const auto& [to, dist] : distances) {
-					catalogue.SetDistance(from, to, dist.AsInt());
-				}
+			const auto& from = elem.AsDict().at("name"s).AsString();
+			const auto distances = elem.AsDict().at("road_distances").AsDict();
+			for (const auto& [to, dist] : distances) {
+				catalogue.SetDistance(from, to, dist.AsInt());
 			}
 		}
-	}
-
-	bool JsonReader::IsStop(const json::Node& node) {
-		if (!node.IsDict()) {
-			return false;
-		}
-		const auto& stop = node.AsDict();
-		if (stop.count("type"s) == 0 || stop.at("type"s) != "Stop"s) {
-			return false;
-		}
-		if (stop.count("name"s) == 0 || !(stop.at("name"s).IsString())) {
-			return false;
-		}
-		if (stop.count("latitude"s) == 0 || !(stop.at("latitude"s).IsDouble())) {
-			return false;
-		}
-		if (stop.count("longitude"s) == 0 || !(stop.at("longitude"s).IsDouble())) {
-			return false;
-		}
-		if (stop.count("road_distances"s) == 0 || (stop.at("longitude"s).IsDict())) {
-			return false;
-		}
-		return true;
-	}
-
-	bool JsonReader::IsRoute(const json::Node& node) {
-		if (!node.IsDict()) {
-			return false;
-		}
-		const auto& bus = node.AsDict();
-		if (bus.count("type"s) == 0 || bus.at("type"s) != "Bus"s) {
-			return false;
-		}
-		if (bus.count("name"s) == 0 || !(bus.at("name"s).IsString())) {
-			return false;
-		}
-		if (bus.count("is_roundtrip"s) == 0 || !(bus.at("is_roundtrip"s).IsBool())) {
-			return false;
-		}
-		if (bus.count("stops"s) == 0 || !(bus.at("stops"s).IsArray())) {
-			return false;
-		}
-		return true;
 	}
 
 	void JsonReader::AnsverRequests(const transport_catalogue::TransportCatalogue& catalogue,
@@ -179,13 +133,13 @@ namespace json_reader {
 		json::Array ansver;
 		for (const auto& request : requests) {
 			if (IsRouteRequest(request)) {
-				ansver.push_back(LoadRouteAnsver(request.AsDict(), catalogue));
+				ansver.emplace_back(LoadRouteAnsver(request.AsDict(), catalogue));
 			}
 			else if (IsStopRequest(request)) {
-				ansver.push_back(LoadStopAnswer(request.AsDict(), catalogue));
+				ansver.emplace_back(LoadStopAnswer(request.AsDict(), catalogue));
 			}
 			else if (IsMapRequest(request)) {
-				ansver.push_back(LoadMapAnswer(request.AsDict(), catalogue, render_settings));
+				ansver.emplace_back(LoadMapAnswer(request.AsDict(), catalogue, render_settings));
 			}
 		}
 		return ansver;
@@ -219,6 +173,8 @@ namespace json_reader {
 				for (auto bus_name : buses_names.value().get()) {
 					buses.push_back(std::string(bus_name));
 				}
+				//Тоже не совсем вас понял.
+				//get() и так noexcept если я правильно понимаю.!!!!!!!!!!!!!!!!!!!!!
 			}
 			return json::Builder{}.StartDict().
 				Key("request_id"s).Value(id).
@@ -304,8 +260,8 @@ namespace json_reader {
 		}
 		else if (node.IsArray() && node.AsArray().size() == 3) {
 			auto result = svg::Rgb(static_cast<uint8_t>(node.AsArray().at(0).AsInt()),
-				static_cast<uint8_t>(node.AsArray().at(1).AsInt()),
-				static_cast<uint8_t>(node.AsArray().at(2).AsInt()));
+				static_cast<uint8_t>(node.AsArray()[1].AsInt()),
+				static_cast<uint8_t>(node.AsArray()[2].AsInt()));
 			return result;
 		}
 		else if (node.IsArray() && node.AsArray().size() == 4) {
@@ -322,12 +278,12 @@ namespace json_reader {
 
 	svg::Point JsonReader::ReadOffset(const json::Array& node) {
 		svg::Point result;
-		if (node.size() > 1) {
+		if (node.size() == 2) {
 			if (node.at(0).IsDouble()) {
-				result.x = node.at(0).AsDouble();
+				result.x = node[0].AsDouble();
 			}
 			if (node.at(1).IsDouble()) {
-				result.y = node.at(1).AsDouble();
+				result.y = node[1].AsDouble();
 			}
 		}
 		return result;

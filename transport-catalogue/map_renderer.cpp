@@ -88,7 +88,7 @@ namespace renderer {
 		auto max_color_count = settings_.color_palette.size();
 		size_t color_index = 0;
 		for (const auto& route : routes) {
-			if (route.second->stops_.size() > 0) {
+			if (!route.second->stops_.empty()) {
 				svg::Polyline line;
 				line.SetStrokeColor(settings_.color_palette.at(color_index % max_color_count)).
 					SetFillColor(svg::NoneColor).SetStrokeWidth(settings_.line_width).

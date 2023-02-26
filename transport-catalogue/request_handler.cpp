@@ -27,7 +27,7 @@ namespace transport_catalogue {
 	svg::Document RequestHandler::RenderMap() const {
 		if (render_settings_) {
 			renderer::MapRenderer renderer;
-			renderer.SetSettings(render_settings_.value());
+			renderer.SetSettings(*render_settings_);
 			return renderer.RenderMap(catalogue_);
 		}
 		else {

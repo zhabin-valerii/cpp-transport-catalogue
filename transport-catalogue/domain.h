@@ -13,7 +13,7 @@ namespace domain {
 
 	struct RouteInfo {
 		std::string name;
-		RouteType type_route;
+		RouteType type_route = RouteType::UNKNOWN;
 		int num_of_stops = 0;
 		int num_of_unique_stops = 0;
 		int route_length = 0;
@@ -21,12 +21,21 @@ namespace domain {
 	};
 
 	struct Stop {
-		Stop() {}
+		Stop() = default;
 		Stop(const std::string& name, geo::Coordinates coordinates);
 		friend bool operator==(const Stop& lhs,const Stop& rhs);
 
 		std::string name_;
 		geo::Coordinates coordinates_;
+	};
+
+	struct StopHasher {
+		std::hash<std::string_view> hasher;
+		bool operator()(const std::pair<std::string_view, std::string_view>& stops) const {
+			size_t h_from = hasher(stops.first);
+			size_t h_to = hasher(stops.second);
+			return h_from * 31 + h_to;
+		}
 	};
 
 	struct Route {

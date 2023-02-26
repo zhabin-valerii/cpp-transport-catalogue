@@ -108,7 +108,7 @@ namespace svg {
         SQUARE,
     };
 
-    std::ostream& operator<<(std::ostream& out, const StrokeLineCap& cap);
+    std::ostream& operator<<(std::ostream& out, const StrokeLineCap cap);
 
     enum class StrokeLineJoin {
         ARCS,
@@ -118,7 +118,7 @@ namespace svg {
         ROUND,
     };
 
-    std::ostream& operator<<(std::ostream& out, const StrokeLineJoin& join);
+    std::ostream& operator<<(std::ostream& out, const StrokeLineJoin join);
 
     template<typename Owner>
     class PathProps {
@@ -134,17 +134,17 @@ namespace svg {
         }
 
         Owner& SetStrokeWidth(double width) {
-            stroke_width_ = std::move(width);
+            stroke_width_ = width;
             return AsOwner();
         }
 
         Owner& SetStrokeLineCap(StrokeLineCap line_cap) {
-            stroke_line_cap_ = std::move(line_cap);
+            stroke_line_cap_ = line_cap;
             return AsOwner();
         }
 
         Owner& SetStrokeLineJoin(StrokeLineJoin line_join) {
-            stroke_line_join_ = std::move(line_join);
+            stroke_line_join_ = line_join;
             return AsOwner();
         }
 
@@ -220,13 +220,13 @@ namespace svg {
         Text& SetFontSize(uint32_t size);
     
         // Задаёт название шрифта (атрибут font-family)
-        Text& SetFontFamily(std::string font_family);
+        Text& SetFontFamily(const std::string& font_family);
     
         // Задаёт толщину шрифта (атрибут font-weight)
-        Text& SetFontWeight(std::string font_weight);
+        Text& SetFontWeight(const std::string& font_weight);
     
         // Задаёт текстовое содержимое объекта (отображается внутри тега text)
-        Text& SetData(std::string data);
+        Text& SetData(const std::string& data);
     
     private:
         void RenderObject(const RenderContext& context) const override;

@@ -9,7 +9,7 @@ namespace transport_catalogue {
 	using namespace geo;
 	using namespace std::string_literals;
 
-	void TransportCatalogue::AddStop(const std::string& name, const Coordinates& coordinate) {
+	void TransportCatalogue::AddStop(const std::string& name, const Coordinates coordinate) {
 		if (stops_name_.find(name) != stops_name_.end()) {
 			std::cout << "the stop \"" << name << "\" is already there." << std::endl;
 			return;
@@ -91,6 +91,7 @@ namespace transport_catalogue {
 		else {
 			return std::nullopt;
 		}
+		//Здесь я и так возвращаю nullptr. optional<> это же просто обёртка над указателем.!!!!!!!!!!!!!!!
 	}
 
 	const std::unordered_map<std::string_view, std::set<std::string_view>>&
@@ -101,31 +102,24 @@ namespace transport_catalogue {
 	void TransportCatalogue::SetDistance(const std::string& from, const std::string& to, int distance) {
 		auto from_ = FindStop(from);
 		auto to_ = FindStop(to);
-		distances_[from_->name_][to_->name_] = distance;
+		std::pair pair(from_->name_, to_->name_);
+		distances_[pair] = distance;
 	}
 
 	int TransportCatalogue::GetForwardDistance(const std::string& stop_from,
 		const std::string& stop_to) const {
-		if (distances_.count(stop_from) == 0 || distances_.at(stop_from).count(stop_to) == 0) {
-			throw std::out_of_range("No information about distance from "s
-				+ stop_from + " to "s + stop_to);
+		std::pair pair_stops(stop_from, stop_to);
+		if (distances_.count(pair_stops) != 0) {
+			return distances_.at(pair_stops);
 		}
-		return distances_.at(stop_from).at(stop_to);
+		return 0;
 	}
 
 	int TransportCatalogue::GetDistance(const std::string& stop_from, const std::string& stop_to) const {
 		int result = 0;
-		try {
-			result = GetForwardDistance(stop_from, stop_to);
-		}
-		catch (std::out_of_range&) {
-			try {
-				result = GetForwardDistance(stop_to, stop_from);
-			}
-			catch (std::out_of_range&) {
-				throw std::out_of_range("No information about distance between stops "s
-					+ stop_from + " and "s + stop_to);
-			}
+		result = GetForwardDistance(stop_from, stop_to);
+		if (result == 0) {
+			result = GetForwardDistance(stop_to, stop_from);
 		}
 		return result;
 	}
