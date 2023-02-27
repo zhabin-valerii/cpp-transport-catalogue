@@ -309,12 +309,12 @@ namespace json {
 
     void NodeOverloaded::operator()(const Dict& map) const {
         out << '{';
-        bool is_first = true;
+        bool is_first = false;
         for (const auto& [key, value] : map) {
             if (is_first) {
                 out << ", "s;
-                is_first = false;
             }
+            is_first = true;
             NodeOverloaded node{ out };
             node(key);
             out << ':';
@@ -336,9 +336,11 @@ namespace json {
     }
 
     Node::Node(Value& value) {
-        *this = value;
+        *this = std::visit([](auto val) {
+            return Node(val);
+            }, value);
     }
-    
+
     //----------bool methods---------
 
     bool Node::IsNull() const {
@@ -404,11 +406,12 @@ namespace json {
     }
 
     const Array& Node::AsArray() const {
-        if(auto value = std::get_if<Array>(this)) {
+        if (auto value = std::get_if<Array>(this)) {
             return *value;
         }
         throw std::logic_error("Impossible to parse node as Array"s);
     }
+
     Array& Node::AsArray() {
         if (auto value = std::get_if<Array>(this)) {
             return const_cast<Array&>(*value);

@@ -82,16 +82,16 @@ namespace transport_catalogue {
 		return info;
 	}
 
-	std::optional<std::reference_wrapper<const std::set<std::string_view>>>
+	const std::set<std::string_view>
 		TransportCatalogue::GetBusesOnStop(const std::string& stop_name) const {
 		const auto pos = buses_on_stops_.find(FindStop(stop_name)->name_);
 		if (pos != buses_on_stops_.end()) {
 			return std::cref(pos->second);
 		}
 		else {
-			return std::nullopt;
+			std::set<std::string_view> dumb;
+			return dumb;
 		}
-		//Здесь я и так возвращаю nullptr. optional<> это же просто обёртка над указателем.!!!!!!!!!!!!!!!
 	}
 
 	const std::unordered_map<std::string_view, std::set<std::string_view>>&
@@ -102,26 +102,22 @@ namespace transport_catalogue {
 	void TransportCatalogue::SetDistance(const std::string& from, const std::string& to, int distance) {
 		auto from_ = FindStop(from);
 		auto to_ = FindStop(to);
-		std::pair pair(from_->name_, to_->name_);
-		distances_[pair] = distance;
-	}
-
-	int TransportCatalogue::GetForwardDistance(const std::string& stop_from,
-		const std::string& stop_to) const {
-		std::pair pair_stops(stop_from, stop_to);
-		if (distances_.count(pair_stops) != 0) {
-			return distances_.at(pair_stops);
+		if (from_ && to_) {
+			distances_[{from_, to_}] = distance;
 		}
-		return 0;
 	}
 
 	int TransportCatalogue::GetDistance(const std::string& stop_from, const std::string& stop_to) const {
-		int result = 0;
-		result = GetForwardDistance(stop_from, stop_to);
-		if (result == 0) {
-			result = GetForwardDistance(stop_to, stop_from);
+		auto from = FindStop(stop_from);
+		auto to = FindStop(stop_to);
+		if (distances_.count({ from, to }) > 0) {
+			return distances_.at({ from, to });
 		}
-		return result;
+		if (distances_.count({ to, from }) > 0) {
+			return distances_.at({ to, from });
+		}
+
+		return 0.0;
 	}
 
 	int TransportCatalogue::CalculationGivenDistance(const domain::Route* route) const {

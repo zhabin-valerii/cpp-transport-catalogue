@@ -11,7 +11,7 @@ namespace transport_catalogue {
             catalogue_(catalogue) {}
 
         domain::RouteInfo GetRouteInfo(const std::string& bus_name) const;
-        std::optional<std::reference_wrapper<const std::set<std::string_view>>>
+        const std::set<std::string_view>
             GetBusesOnStop(const std::string& stop_name) const;
 
         void ProcessRequest(std::istream& input, std::ostream& out);

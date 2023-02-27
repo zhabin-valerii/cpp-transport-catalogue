@@ -28,8 +28,7 @@ namespace transport_catalogue {
 		domain::RouteInfo GetRouteInfo(const std::string& name) const;
 		double CalculateRouteLength(const domain::Route* route) const noexcept;
 
-		std::optional<std::reference_wrapper<const std::set<std::string_view>>> 
-			GetBusesOnStop(const std::string& stop_name) const;
+		const std::set<std::string_view> GetBusesOnStop(const std::string& stop_name) const;
 		const std::unordered_map<std::string_view, std::set<std::string_view>>& GetBusesOnStops() const;
 
 		void SetDistance(const std::string& from, const std::string& to, int distance);
@@ -50,7 +49,6 @@ namespace transport_catalogue {
 		std::unordered_map<std::string_view, domain::Stop*> stops_name_;
 
 		std::unordered_map<std::string_view, std::set<std::string_view>> buses_on_stops_;
-		std::unordered_map<std::pair<std::string_view, std::string_view>,int, domain::StopHasher> distances_;
-		//std::unordered_map<std::string_view, std::unordered_map<std::string_view, int>> distances_;
+		std::unordered_map<std::pair<domain::Stop*, domain::Stop*>, int, domain::StopHasher> distances_;
 	};
 }//transport_catalogue 

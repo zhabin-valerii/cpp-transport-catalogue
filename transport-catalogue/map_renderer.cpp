@@ -41,7 +41,7 @@ namespace renderer {
 		geo::Coordinates min{90.0, 180.0};
 		geo::Coordinates max{-90.0, -180.0};
 		for (const auto& stop : catalogue.GetStops()) {
-			if (catalogue.GetBusesOnStop(std::string(stop.first))) {
+			if (!catalogue.GetBusesOnStop(std::string(stop.first)).empty()) {
 				const auto& coordinates = stop.second->coordinates_;
 				if (coordinates.lat < min.lat) {
 					min.lat = coordinates.lat;

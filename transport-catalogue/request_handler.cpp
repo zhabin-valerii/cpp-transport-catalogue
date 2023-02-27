@@ -12,7 +12,7 @@ namespace transport_catalogue {
 		return catalogue_.GetRouteInfo(bus_name);
 	}
 
-	std::optional<std::reference_wrapper<const std::set<std::string_view>>>
+	const std::set<std::string_view>
 		RequestHandler::GetBusesOnStop(const std::string& stop_name) const {
 		return catalogue_.GetBusesOnStop(stop_name);
 	}

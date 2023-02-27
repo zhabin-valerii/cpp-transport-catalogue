@@ -13,8 +13,7 @@ namespace json {
 	Builder::KeyItemContext Builder::Key(std::string key) {
 		if (!nodes_stack_.empty() && nodes_stack_.back()->IsDict() && !has_key_) {
 			has_key_ = true;
-			key_ = std::move(key);//Не смог связаться с вами в пачке, поэтому буду писать тут.
-			// не понял, что вы имели тут ввиду!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			key_ = std::move(key);
 			return KeyItemContext(*this);
 		}
 		throw std::logic_error("Incorrect place for key : "s + key);
@@ -33,13 +32,13 @@ namespace json {
 		auto back = nodes_stack_.back();
 
 		if (no_empty && back->IsDict() && has_key_) {
-			nodes_stack_.back()->AsDict().insert({ key_,new_node });
+			back->AsDict().insert({ key_,new_node });
 			has_key_ = false;
 			return *this;
 		}
 
 		if (no_empty && back->IsArray()) {
-			nodes_stack_.back()->AsArray().push_back(new_node);
+			back->AsArray().push_back(new_node);
 			return *this;
 		}
 		throw std::logic_error("Incorrect place for value"s);
@@ -83,14 +82,14 @@ namespace json {
 			auto back = nodes_stack_.back();
 
 			if (back->IsArray()) {
-				auto p = &nodes_stack_.back()->AsArray().back();
+				auto p = &back->AsArray().back();
 				nodes_stack_.push_back(std::move(const_cast<Node*>(p)));
 				return;
 			}
 
 			if (back->IsDict()) {
-				auto p = &nodes_stack_.back()->AsDict().at(key_);
-				nodes_stack_.push_back(const_cast<Node*>(p));
+				auto p = &back->AsDict().at(key_);
+				nodes_stack_.push_back(std::move(const_cast<Node*>(p)));
 				return;
 			}
 		}

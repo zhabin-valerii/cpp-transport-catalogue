@@ -53,11 +53,6 @@ namespace json {
 	public:
 		using ItemContext::ItemContext;
 		KeyValueItemContext Value(Node::Value value);
-		using ItemContext::StartDict;
-		using ItemContext::StartArray;
-		// если убрать эти поределения, они, почему-то не подтягиваются и компилятор ругается не несоответствие
-		//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 	};
 
 	class Builder::KeyValueItemContext final : public ItemContext {
@@ -79,8 +74,5 @@ namespace json {
 	public:
 		using ItemContext::ItemContext;
 		ArrayItemContext Value(Node::Value value);
-		using ItemContext::StartDict;
-		using ItemContext::StartArray;
-		using ItemContext::EndArray;
 	};
 }// namespace json

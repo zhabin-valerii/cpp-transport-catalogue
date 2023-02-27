@@ -30,8 +30,8 @@ namespace domain {
 	};
 
 	struct StopHasher {
-		std::hash<std::string_view> hasher;
-		bool operator()(const std::pair<std::string_view, std::string_view>& stops) const {
+		std::hash<Stop*> hasher;
+		size_t operator()(const std::pair<Stop*, Stop*>& stops) const {
 			size_t h_from = hasher(stops.first);
 			size_t h_to = hasher(stops.second);
 			return h_from * 31 + h_to;
