@@ -13,7 +13,7 @@ namespace json {
 	Builder::KeyItemContext Builder::Key(std::string key) {
 		if (!nodes_stack_.empty() && nodes_stack_.back()->IsDict() && !has_key_) {
 			has_key_ = true;
-			key_ = std::move(key);
+			place = &nodes_stack_.back()->AsDict()[key];
 			return KeyItemContext(*this);
 		}
 		throw std::logic_error("Incorrect place for key : "s + key);
@@ -32,7 +32,7 @@ namespace json {
 		auto back = nodes_stack_.back();
 
 		if (no_empty && back->IsDict() && has_key_) {
-			back->AsDict().insert({ key_,new_node });
+			*place = new_node;
 			has_key_ = false;
 			return *this;
 		}
@@ -88,7 +88,7 @@ namespace json {
 			}
 
 			if (back->IsDict()) {
-				auto p = &back->AsDict().at(key_);
+				auto p = place;
 				nodes_stack_.push_back(std::move(const_cast<Node*>(p)));
 				return;
 			}

@@ -32,7 +32,7 @@ namespace json {
 		std::vector<Node*> nodes_stack_;
 		bool is_empty_ = true;
 		bool has_key_ = false;
-		std::string key_;
+		json::Dict::mapped_type* place;
 	};
 
 	class Builder::ItemContext {
