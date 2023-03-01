@@ -44,7 +44,7 @@ namespace svg {
         return out;
     }
 
-    std::ostream& operator<<(std::ostream& out, const StrokeLineCap cap) {
+    std::ostream& operator<<(std::ostream& out, StrokeLineCap cap) {
         switch (cap){
             case StrokeLineCap::BUTT: return out << "butt"s;
             case StrokeLineCap::ROUND: return out << "round"s;
@@ -53,7 +53,7 @@ namespace svg {
         return out;
     }
 
-    std::ostream& operator<<(std::ostream& out, const StrokeLineJoin join) {
+    std::ostream& operator<<(std::ostream& out, StrokeLineJoin join) {
         switch (join) {
             case StrokeLineJoin::ARCS: return out << "arcs"s;
             case StrokeLineJoin::BEVEL: return out << "bevel"s;

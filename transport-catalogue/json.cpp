@@ -315,8 +315,7 @@ namespace json {
                 out << ", "s;
             }
             is_first = true;
-            NodeOverloaded node{ out };
-            node(key);
+            this->operator()(key);
             out << ':';
             std::visit(NodeOverloaded{ out }, value.GetValue());
         }
@@ -335,11 +334,7 @@ namespace json {
         out << ']';
     }
 
-    Node::Node(Value& value) {
-        *this = std::visit([](auto val) {
-            return Node(val);
-            }, value);
-    }
+    Node::Node(Value& value) : variant(std::move(value)) {}
 
     //----------bool methods---------
 
@@ -413,10 +408,7 @@ namespace json {
     }
 
     Array& Node::AsArray() {
-        if (auto value = std::get_if<Array>(this)) {
-            return const_cast<Array&>(*value);
-        }
-        throw std::logic_error("Impossible to parse node as Array"s);
+        return const_cast<Array&>(static_cast<const Node*>(this)->AsArray());
     }
 
     const Dict& Node::AsDict() const {
@@ -427,10 +419,7 @@ namespace json {
     }
 
     Dict& Node::AsDict() {
-        if (auto value = std::get_if<Dict>(this)) {
-            return const_cast<Dict&>(*value);
-        }
-        throw std::logic_error("Impossible to parse node as Dict"s);
+        return const_cast<Dict&>(static_cast<const Node*>(this)->AsDict());
     }
 
     //----------operators---------

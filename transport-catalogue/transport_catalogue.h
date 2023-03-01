@@ -28,11 +28,10 @@ namespace transport_catalogue {
 		domain::RouteInfo GetRouteInfo(const std::string& name) const;
 		double CalculateRouteLength(const domain::Route* route) const noexcept;
 
-		const std::set<std::string_view> GetBusesOnStop(const std::string& stop_name) const;
+		const std::set<std::string_view>& GetBusesOnStop(const std::string& stop_name) const;
 		const std::unordered_map<std::string_view, std::set<std::string_view>>& GetBusesOnStops() const;
 
 		void SetDistance(const std::string& from, const std::string& to, int distance);
-		int GetForwardDistance(const std::string& stop_from, const std::string& stop_to) const;
 		int GetDistance(const std::string& stop_from, const std::string& stop_to) const;
 		int CalculationGivenDistance(const domain::Route* route) const;
 

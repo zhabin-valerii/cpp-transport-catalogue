@@ -1,6 +1,8 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <utility>
+#include <functional>
 
 #include "geo.h"
 
@@ -31,11 +33,7 @@ namespace domain {
 
 	struct StopHasher {
 		std::hash<Stop*> hasher;
-		size_t operator()(const std::pair<Stop*, Stop*>& stops) const {
-			size_t h_from = hasher(stops.first);
-			size_t h_to = hasher(stops.second);
-			return h_from * 31 + h_to;
-		}
+		size_t operator()(const std::pair<Stop*, Stop*>& stops) const;
 	};
 
 	struct Route {

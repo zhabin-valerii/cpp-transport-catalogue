@@ -83,13 +83,13 @@ namespace json {
 
 			if (back->IsArray()) {
 				auto p = &back->AsArray().back();
-				nodes_stack_.push_back(std::move(const_cast<Node*>(p)));
+				nodes_stack_.emplace_back(std::move(p));
 				return;
 			}
 
 			if (back->IsDict()) {
 				auto p = place;
-				nodes_stack_.push_back(std::move(const_cast<Node*>(p)));
+				nodes_stack_.emplace_back(std::move(p));
 				return;
 			}
 		}

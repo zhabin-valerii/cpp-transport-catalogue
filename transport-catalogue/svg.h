@@ -108,7 +108,7 @@ namespace svg {
         SQUARE,
     };
 
-    std::ostream& operator<<(std::ostream& out, const StrokeLineCap cap);
+    std::ostream& operator<<(std::ostream& out, StrokeLineCap cap);
 
     enum class StrokeLineJoin {
         ARCS,
@@ -118,7 +118,7 @@ namespace svg {
         ROUND,
     };
 
-    std::ostream& operator<<(std::ostream& out, const StrokeLineJoin join);
+    std::ostream& operator<<(std::ostream& out, StrokeLineJoin join);
 
     template<typename Owner>
     class PathProps {

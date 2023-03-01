@@ -10,12 +10,14 @@ namespace json_reader {
 
 	void JsonReader::LoadData(transport_catalogue::TransportCatalogue& catalogue) const {
 		auto get_root = data_.GetRoot();
-		if (get_root.IsDict() && get_root.AsDict().count("base_requests"s) != 0) {
-			auto& base_request = get_root.AsDict().at("base_requests"s);
+		auto as_dict = get_root.AsDict();
+		if (get_root.IsDict() && as_dict.count("base_requests"s) != 0) {
+			auto& base_request = as_dict.at("base_requests"s);
 			if (base_request.IsArray()) {
-				LoadStops(base_request.AsArray(), catalogue);
-				LoadRoutes(base_request.AsArray(), catalogue);
-				LoadDistances(base_request.AsArray(), catalogue);
+				auto as_array = base_request.AsArray();
+				LoadStops(as_array, catalogue);
+				LoadRoutes(as_array, catalogue);
+				LoadDistances(as_array, catalogue);
 			}
 		}
 	}
@@ -76,7 +78,7 @@ namespace json_reader {
 				std::vector<std::string> stops_names;
 				for (const auto& stop_name : stops) {
 					if (stop_name.IsString()) {
-						stops_names.push_back(stop_name.AsString());
+						stops_names.emplace_back(stop_name.AsString());
 					}
 				}
 				catalogue.AddRoute(name, type, stops_names);
@@ -195,7 +197,7 @@ namespace json_reader {
 			json::Array buses;
 			if (!buses_names.empty()) {
 				for (auto bus_name : buses_names) {
-					buses.push_back(std::string(bus_name));
+					buses.emplace_back(std::string(bus_name));
 				}
 			}
 			return json::Builder{}.StartDict().

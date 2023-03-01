@@ -82,15 +82,15 @@ namespace transport_catalogue {
 		return info;
 	}
 
-	const std::set<std::string_view>
+	const std::set<std::string_view>&
 		TransportCatalogue::GetBusesOnStop(const std::string& stop_name) const {
 		const auto pos = buses_on_stops_.find(FindStop(stop_name)->name_);
 		if (pos != buses_on_stops_.end()) {
-			return std::cref(pos->second);
+			return pos->second;
 		}
 		else {
-			std::set<std::string_view> dumb;
-			return dumb;
+			static const std::set<std::string_view> dummy;
+			return dummy;
 		}
 	}
 

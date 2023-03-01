@@ -5,6 +5,12 @@ namespace domain {
 		name_(name),
 		coordinates_(coordinates) {}
 
+	size_t StopHasher::operator()(const std::pair<Stop*, Stop*>& stops) const {
+		size_t h_from = hasher(stops.first);
+		size_t h_to = hasher(stops.second);
+		return h_from * 31 + h_to;
+	}
+
 	Route::Route(const std::string& name, RouteType type_route, std::vector<Stop*>& route) :
 		name_(name),
 		type_route_(type_route),
