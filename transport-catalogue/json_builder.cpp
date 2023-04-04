@@ -119,9 +119,9 @@ namespace json {
 		return builder_.EndArray();
 	}
 
-	Builder::KeyValueItemContext Builder::KeyItemContext::Value(Node::Value value) {
+	Builder::DictItemContext Builder::KeyItemContext::Value(Node::Value value) {
 		builder_.Value(std::move(value));
-		return KeyValueItemContext{ builder_ };
+		return DictItemContext{ builder_ };
 	}
 
 	Builder::ArrayItemContext Builder::ArrayItemContext::Value(Node::Value value) {

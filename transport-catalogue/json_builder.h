@@ -11,7 +11,6 @@ namespace json {
 	class Builder final {
 		class ItemContext;
 		class KeyItemContext;
-		class KeyValueItemContext;
 		class DictItemContext;
 		class ArrayItemContext;
 	public:
@@ -32,9 +31,9 @@ namespace json {
 		std::vector<Node*> nodes_stack_;
 		bool is_empty_ = true;
 		bool has_key_ = false;
-		json::Dict::mapped_type* place;
-	};
-
+		json::Dict::mapped_type* place; // пытался реализовать со свтавкой
+	};                                  // сразу в вектор без сохранения места,
+										// но не вышло...
 	class Builder::ItemContext {
 	public:
 		ItemContext(Builder& builder) :
@@ -52,15 +51,7 @@ namespace json {
 	class Builder::KeyItemContext final : public ItemContext {
 	public:
 		using ItemContext::ItemContext;
-		KeyValueItemContext Value(Node::Value value);
-	};
-
-	class Builder::KeyValueItemContext final : public ItemContext {
-	public:
-		using ItemContext::ItemContext;
-		using ItemContext::Key;
-		using ItemContext::EndDict;
-
+		DictItemContext Value(Node::Value value);
 	};
 
 	class Builder::DictItemContext final : public ItemContext {
