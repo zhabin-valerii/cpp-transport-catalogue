@@ -20,8 +20,13 @@ namespace transport_catalogue {
 	void RequestHandler::ProcessRequest(std::istream& input, std::ostream& out) {
 		json_reader::JsonReader json(input);
 		json.LoadData(catalogue_);
-		auto render_setings = json.LoadRenderSettings();
-		json.AnsverRequests(catalogue_, render_setings.value_or(renderer::RenderSettings{}), out);
+		render_settings_ = json.LoadRenderSettings();
+		routing_settings_ = json.LoadRoutingSettings();
+		if (!InitRouter()) {
+			std::cerr << "Can't init Transport Router"s << std::endl;
+			return;
+		}
+		json.AnsverRequests(catalogue_, render_settings_.value_or(renderer::RenderSettings{}), *router_, out);
 	}
 
 	svg::Document RequestHandler::RenderMap() const {
@@ -37,6 +42,37 @@ namespace transport_catalogue {
 
 	void RequestHandler::SetRenderSettings(const renderer::RenderSettings& render_settings) {
 		render_settings_ = render_settings;
+	}
+
+	void RequestHandler::SetRouterSettings(const RoutingSettings& routing_settings) {
+		routing_settings_ = routing_settings;
+	}
+
+	std::optional<RequestHandler::Route>
+		RequestHandler::BuildRoute(const std::string& from, const std::string& to) {
+		if (!InitRouter()) {
+			return std::nullopt;
+		}
+		else {
+			return router_->BuildRoute(from, to);
+		}
+	}
+
+	bool RequestHandler::ReInitRouter() {
+		if (routing_settings_) {
+			router_ = std::make_unique<transport_router::TransportRouter>(catalogue_, routing_settings_.value());
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+
+	bool RequestHandler::InitRouter() {
+		if (!router_) {
+			return ReInitRouter();
+		}
+		return true;
 	}
 
 }//namespace request_handler

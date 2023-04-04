@@ -8,6 +8,7 @@
 #include "transport_catalogue.h"
 #include "map_renderer.h"
 #include "json_builder.h"
+#include "transport_router.h"
 
 namespace json_reader {
 	class JsonReader {
@@ -18,9 +19,13 @@ namespace json_reader {
 
 		std::optional<renderer::RenderSettings> LoadRenderSettings() const;
 
+		std::optional<transport_router::TransportRouter::RoutingSettings> LoadRoutingSettings() const;
+
 		void AnsverRequests(const transport_catalogue::TransportCatalogue& catalogue,
 			const renderer::RenderSettings& render_settings,
+			transport_router::TransportRouter& router,
 			std::ostream& out) const;
+
 	private:
 		renderer::RenderSettings LoadSettings(const json::Dict& data) const;
 		static void LoadStops(const json::Array& data, transport_catalogue::TransportCatalogue& catalogue);
@@ -32,15 +37,19 @@ namespace json_reader {
 		static bool IsRouteRequest(const json::Node& node);
 		static bool IsStopRequest(const json::Node& node);
 		static bool IsMapRequest(const json::Node& node);
+		static bool IsRouteBuildRequest(const json::Node& node);
 
 		json::Array LoadAnsvers(const json::Array& requests,
 			const transport_catalogue::TransportCatalogue& catalogue,
-			const renderer::RenderSettings& render_settings) const;
+			const renderer::RenderSettings& render_settings,
+			transport_router::TransportRouter& router) const;
 
 		static json::Dict LoadRouteAnsver(const json::Dict& request, const transport_catalogue::TransportCatalogue& catalogue);
 		static json::Dict LoadStopAnswer(const json::Dict& request, const transport_catalogue::TransportCatalogue& catalogue);
 		static json::Dict LoadMapAnswer(const json::Dict& request, const transport_catalogue::TransportCatalogue& catalogue,
 			const renderer::RenderSettings& render_settings);
+		json::Dict LoadRouteBuildAnswer(const json::Dict& request, transport_router::TransportRouter& router) const;
+
 		static json::Dict ErrorMessage(int id);
 
 		static svg::Color ReadColor(const json::Node& node);

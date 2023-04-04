@@ -14,6 +14,8 @@ namespace json {
 		if (!nodes_stack_.empty() && nodes_stack_.back()->IsDict() && !has_key_) {
 			has_key_ = true;
 			place = &nodes_stack_.back()->AsDict()[key];
+			//Node::Value& host_value = const_cast<Node::Value&>(nodes_stack_.back()->GetValue());
+			//nodes_stack_.back() = &std::get<Dict>(host_value)[std::move(key)];
 			return KeyItemContext(*this);
 		}
 		throw std::logic_error("Incorrect place for key : "s + key);
@@ -32,6 +34,8 @@ namespace json {
 		auto back = nodes_stack_.back();
 
 		if (no_empty && back->IsDict() && has_key_) {
+			//auto p = nodes_stack_.back();
+			//*nodes_stack_.back() = new_node;
 			*place = new_node;
 			has_key_ = false;
 			return *this;
