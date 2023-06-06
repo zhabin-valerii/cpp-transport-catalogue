@@ -1,54 +1,73 @@
 #pragma once
+
 #include "geo.h"
 #include "domain.h"
+#include "graph.h"
 
 #include <string>
+#include <list>
+#include <unordered_set>
 #include <vector>
+#include <tuple>
 #include <deque>
 #include <unordered_map>
-#include <unordered_set>
-#include <string_view>
+#include <algorithm>
 #include <set>
-#include <optional>
-#include <memory>
+#include <cmath>
+#include <utility>
+#include <filesystem>
+#include <fstream>
+#include <transport_catalogue.pb.h>
 
-//класс транспортного справочника;
+namespace tr_cat {
+namespace aggregations {
+using namespace std::string_literals;
 
-namespace transport_catalogue {
-	using namespace geo;
+class TransportCatalogue {
+public:
+    void AddStop (const std::string_view name, geo::Coordinates coords);
+    void AddBus (std::string_view name, std::vector<std::string_view>& stops, const bool is_ring);
+    void AddDistance(const std::string_view lhs, const std::string_view rhs, double distance);
+    std::optional<const Bus*>  GetBusInfo (std::string_view name) const;
+    std::optional<const Stop*> GetStopInfo (std::string_view name) const;
+    int GetDistance(const Stop* lhs, const Stop* rhs) const;
+    size_t GetVertexCount() const {return vertex_count_;}
+    auto begin() const {return sorted_buses_.begin();}
+    auto end() const {return sorted_buses_.end();}
+    size_t size() const {return sorted_buses_.size();}
+    size_t empty() const {return sorted_buses_.empty();}
+    transport_catalog_serialize::Catalog Serialize () const;
+    bool Deserialize (transport_catalog_serialize::Catalog& catalog);
+    std::vector<std::string_view> GetSortedStopsNames() const;
+private:
+    class DistanceHasher {
+    public:
+        size_t operator() (const std::pair<const Stop*, const Stop*> element) const {
+            const size_t shift = (size_t)log2(1 + sizeof(Stop));
+            const size_t result = (size_t)(element.first) >> shift;
+            return result + ((size_t)(element.second) >> shift) * 37;
+        }
+    };
+    class DistanceCompare {
+    public:
+        bool operator() (const std::pair<const Stop*, const Stop*> lhs, const std::pair<const Stop*, const Stop*> rhs) const {
+            return lhs.first == rhs.first && rhs.second == lhs.second;
+        }
+    };
 
-	class TransportCatalogue {
-	public:
-		void AddStop(const std::string& name, const Coordinates coordinate);
-		void AddRoute(const std::string& name, domain::RouteType type_route_, const std::vector<std::string>& stops_str);
+    std::unordered_map<std::pair<const Stop*, const Stop*>, int, DistanceHasher, DistanceCompare> distances_;
+    std::deque<Stop> stops_data_;
+    std::deque<Bus> buses_data_;
+    std::unordered_map<std::string_view, Stop*> stops_container_;
+    std::unordered_map<std::string_view, Bus*> buses_container_;
+    std::vector<std::string_view> sorted_buses_;
+    size_t vertex_count_ = 0;
 
-
-		domain::RouteInfo GetRouteInfo(const std::string& name) const;
-		double CalculateRouteLength(const domain::Route* route) const noexcept;
-
-		const std::set<std::string_view>& GetBusesOnStop(const std::string& stop_name) const;
-		const std::unordered_map<std::string_view, std::set<std::string_view>>& GetBusesOnStops() const;
-
-		void SetDistance(const std::string& from, const std::string& to, int distance);
-		int GetDistance(const std::string& stop_from, const std::string& stop_to) const;
-
-		const std::unordered_map<std::string_view, domain::Stop*>&
-			GetStops() const;
-		const std::unordered_map<std::string_view, domain::Route*>&
-			GetRoutes() const;
-
-	private:
-		domain::Stop* FindStop(const std::string& name) const;
-		domain::Route* FindRoute(const std::string& name) const;
-		int CalculationGivenDistance(const domain::Route* route) const;
-
-		std::deque<domain::Stop> stops_;
-		std::unordered_map<std::string_view, domain::Stop*> stops_name_;
-
-		std::deque<domain::Route> buses_;
-		std::unordered_map<std::string_view, domain::Route*> routes_name_;
-
-		std::unordered_map<std::string_view, std::set<std::string_view>> buses_on_stops_;
-		std::unordered_map<std::pair<domain::Stop*, domain::Stop*>, int, domain::StopHasher> distances_;
-	};
-}//transport_catalogue 
+    int ComputeRouteDistance (std::string_view name) const;
+    double ComputeGeoRouteDistance (std::string_view name) const;
+    Stop* FindStop (std::string_view name) const;
+    Bus* FindBus (std:: string_view name)const;
+    std::vector<const Stop*> SortStops() const;
+};
+}//aggregations
+}//tr_cat

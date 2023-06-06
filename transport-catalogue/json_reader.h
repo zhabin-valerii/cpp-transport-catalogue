@@ -1,60 +1,83 @@
 #pragma once
 
-#include <sstream>
-#include <stdexcept>
-#include <string>
-
 #include "json.h"
 #include "transport_catalogue.h"
+#include "request_handler.h"
 #include "map_renderer.h"
 #include "json_builder.h"
 #include "transport_router.h"
+#include "serialization.h"
 
-namespace json_reader {
-	class JsonReader {
-	public:
-		JsonReader(std::istream& input);
+#include <iostream>
+#include <fstream>
+#include <exception>
+#include <sstream>
+#include <cmath>
 
-		void LoadData(transport_catalogue::TransportCatalogue& catalogue) const;
+namespace tr_cat {
+namespace interface {
+class JsonReader : public RequestInterface {
+public:
 
-		std::optional<renderer::RenderSettings> LoadRenderSettings() const;
+    explicit JsonReader(aggregations::TransportCatalogue& catalog)
+    :RequestInterface (catalog)
+    , transport_router_(catalog)
+    , renderer_(catalog)
+    , serializator_(catalog, renderer_, transport_router_){}
 
-		std::optional<transport_router::TransportRouter::RoutingSettings> LoadRoutingSettings() const;
+    JsonReader(aggregations::TransportCatalogue& catalog, std::istream& input)
+    :RequestInterface (catalog, input)
+    , transport_router_(catalog)
+    , renderer_(catalog)
+    , serializator_(catalog, renderer_, transport_router_){}
 
-		void AnsverRequests(const transport_catalogue::TransportCatalogue& catalogue,
-			const renderer::RenderSettings& render_settings,
-			transport_router::TransportRouter& router,
-			std::ostream& out) const;
+    JsonReader(aggregations::TransportCatalogue& catalog, std::ostream& output)
+    :RequestInterface (catalog, output)
+    , transport_router_(catalog)
+    , renderer_(catalog)
+    , serializator_(catalog, renderer_, transport_router_){}
 
-	private:
-		renderer::RenderSettings LoadSettings(const json::Dict& data) const;
-		static void LoadStops(const json::Array& data, transport_catalogue::TransportCatalogue& catalogue);
-		static void LoadRoutes(const json::Array& data, transport_catalogue::TransportCatalogue& catalogue);
-		static void LoadDistances(const json::Array& data, transport_catalogue::TransportCatalogue& catalogue);
+    JsonReader(aggregations::TransportCatalogue& catalog, std::istream& input, std::ostream& output)
+        :RequestInterface (catalog, input, output)
+        , transport_router_(catalog)
+        , renderer_(catalog)
+        , serializator_(catalog, renderer_, transport_router_){}
 
-		static bool IsStop(const json::Node& node);
-		static bool IsRoute(const json::Node& node);
-		static bool IsRouteRequest(const json::Node& node);
-		static bool IsStopRequest(const json::Node& node);
-		static bool IsMapRequest(const json::Node& node);
-		static bool IsRouteBuildRequest(const json::Node& node);
+    void ReadDocument () override;
+    void ParseDocument () override;
+    bool Serialize(bool with_graph = false) const override {return serializator_.Serialize(with_graph);}
+    bool Deserialize(bool with_graph = false) override {return serializator_.Deserialize(with_graph); }
+    void RenderMap(std::ostream& out = std::cout) override {renderer_.Render(out);}
+    void CreateGraph() override {transport_router_.CreateGraph();}
+    void PrintAnswers () override;
+    bool TestingFilesOutput(std::string filename_lhs, std::string filename_rhs) override;
+    const render::RenderSettings& GetRenderSettings() const;
+private:
+    struct CreateNode {
+        friend class JsonReader;
+        explicit CreateNode(render::MapRenderer& renderer, router::TransportRouter& router)
+        :renderer_(renderer), transport_router_(router){}
+        json::Node operator() (int value);
+        json::Node operator() (StopOutput& value);
+        json::Node operator() (BusOutput& value);
+        json::Node operator() (MapOutput& value);
+        json::Node operator() (RouteOutput& value);
+    private:
+        render::MapRenderer& renderer_;
+        router::TransportRouter& transport_router_;
+    };
+    json::Document document_ = {};
+    json::Document document_answers_ = {};
+    router::TransportRouter transport_router_;
+    render::MapRenderer renderer_;
+    serialize::Serializator serializator_;
 
-		json::Array LoadAnsvers(const json::Array& requests,
-			const transport_catalogue::TransportCatalogue& catalogue,
-			const renderer::RenderSettings& render_settings,
-			transport_router::TransportRouter& router) const;
+    void ParseBase (json::Node& base);
+    void ParseStats (json::Node& stats);
+    void ParseRenderSettings(json::Node& render_settings);
+    void ParseRoutingSettings(json::Node& routing_settings);
+    void PrepareToPrint ();
 
-		static json::Dict LoadRouteAnsver(const json::Dict& request, const transport_catalogue::TransportCatalogue& catalogue);
-		static json::Dict LoadStopAnswer(const json::Dict& request, const transport_catalogue::TransportCatalogue& catalogue);
-		static json::Dict LoadMapAnswer(const json::Dict& request, const transport_catalogue::TransportCatalogue& catalogue,
-			const renderer::RenderSettings& render_settings);
-		json::Dict LoadRouteBuildAnswer(const json::Dict& request, transport_router::TransportRouter& router) const;
-
-		static json::Dict ErrorMessage(int id);
-
-		static svg::Color ReadColor(const json::Node& node);
-		static svg::Point ReadOffset(const json::Array& node);
-
-		json::Document data_;
-	};
-}//namespace json_reader
+};
+} //interface
+}//tr_cat

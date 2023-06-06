@@ -1,69 +1,61 @@
 #pragma once
 
-#include <vector>
-#include <string>
-#include <variant>
-
 #include "json.h"
+
+#include <deque>
 
 namespace json {
 
-	class Builder final {
-		class ItemContext;
-		class KeyItemContext;
-		class DictItemContext;
-		class ArrayItemContext;
-	public:
-		Builder() = default;
+    class Builder;
+    class DictReturn;
+    class KeyReturn;
 
-		const Node& Build() const;
-		KeyItemContext Key(std::string key);
-		Builder& Value(Node::Value value);
+    class ArrayReturn {
+    public:
+        virtual ArrayReturn& Value (Node value) = 0;
+        virtual DictReturn& StartDict() = 0;
+        virtual ArrayReturn& StartArray() = 0;
+        virtual Builder& EndArray() = 0;
+        virtual ~ArrayReturn() = default;
+    };
 
-		DictItemContext StartDict();
-		Builder& EndDict();
+    class KeyReturn {
+    public:
+        virtual DictReturn& Value(Node value) = 0;
+        virtual ArrayReturn& StartArray() = 0;
+        virtual DictReturn& StartDict() = 0;
+        virtual ~KeyReturn() = default;
+    };
 
-		ArrayItemContext StartArray();
-		Builder& EndArray();
-	private:
-		void AddRef(const Node& value);
-		Node root_;
-		std::vector<Node*> nodes_stack_;
-		bool is_empty_ = true;
-		bool has_key_ = false;
-		json::Dict::mapped_type* place; // пытался реализовать со свтавкой
-	};                                  // сразу в вектор без сохранения места,
-										// но не вышло...
-	class Builder::ItemContext {
-	public:
-		ItemContext(Builder& builder) :
-			builder_(builder) {}
-	protected:
-		KeyItemContext Key(std::string key);
-		DictItemContext StartDict();
-		Builder& EndDict();
-		ArrayItemContext StartArray();
-		Builder& EndArray();
+    class DictReturn {
+    public: 
+        virtual KeyReturn& Key(std::string key) = 0;
+        virtual Builder& EndDict() = 0;
+        virtual ~DictReturn() = default;
+    };
 
-		Builder& builder_;
-	};
-
-	class Builder::KeyItemContext final : public ItemContext {
-	public:
-		using ItemContext::ItemContext;
-		DictItemContext Value(Node::Value value);
-	};
-
-	class Builder::DictItemContext final : public ItemContext {
-	public:
-		using ItemContext::ItemContext;
-		using ItemContext::Key;
-		using ItemContext::EndDict;
-	};
-
-	class Builder::ArrayItemContext final : public ItemContext {
-	public:
-		using ItemContext::ItemContext;
-		ArrayItemContext Value(Node::Value value);
-	};
-}// namespace json
+    class Builder : public DictReturn, public KeyReturn, public ArrayReturn {
+    public:
+        DictReturn& StartDict() override;
+        Builder& EndDict() override;
+        ArrayReturn& StartArray() override;
+        Builder& EndArray() override;    
+        KeyReturn& Key(std::string key) override;
+        Builder& Value(Node value) override;
+        Node Build();
+        ~Builder() override = default;
+    private:
+        struct KeyWithFlag {
+            void operator() (std::string&& key) {
+                value = move(key);
+                is_value = true;
+            }
+            std::string value;
+            bool is_value = false;
+        };
+        Node root_;
+        std::deque<Node*> stack_; //РЅР°Р±РѕСЂ "РЅРµ Р·Р°РєСЂС‹С‚С‹С…" РєРѕРЅС‚РµР№РЅРµСЂРѕРІ (Array РёР»Рё Dict)
+        KeyWithFlag key_; // РєР»СЋС‡ РґР»СЏ Dict, Р·Р°РїРёСЃС‹РІР°РµС‚СЃСЏ РІ root_ РІ РјРѕРјРµРЅС‚ РїРѕСЃС‚СѓРїР»РµРЅРёСЏ РІР°Р»РёРґРЅРѕРіРѕ Р·РЅР°С‡РµРЅРёСЏ Рє СЌС‚РѕРјСѓ РєР»СЋС‡Сѓ
+        bool AddNewNodeContainer(Node node); 
+    };
+}//json

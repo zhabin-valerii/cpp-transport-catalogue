@@ -1,48 +1,31 @@
 #pragma once
-#include <string>
-#include <vector>
-#include <utility>
-#include <functional>
 
 #include "geo.h"
+#include "graph.h"
 
-namespace domain {
-	enum class RouteType {
-		UNKNOWN,
-		LINEAR,
-		CIRCLE,
-	};
+#include <string>
+#include <vector>    
+#include <set>
 
-	struct RouteInfo {
-		std::string name;
-		RouteType type_route = RouteType::UNKNOWN;
-		int num_of_stops = 0;
-		int num_of_unique_stops = 0;
-		int route_length = 0;
-		double curvature = 0.0;
-	};
+namespace tr_cat {
 
-	struct Stop {
-		Stop() = default;
-		Stop(const std::string& name, geo::Coordinates coordinates);
-		friend bool operator==(const Stop& lhs,const Stop& rhs);
+const double INNACURACY = 1e-6;
 
-		std::string name_;
-		geo::Coordinates coordinates_;
-	};
+struct Stop;
+struct Bus {
+    std::string name;
+    std::vector<Stop*> stops;
+    int unique_stops = 0;
+    int distance = 0;
+    double curvature = 0;
+    bool is_ring = false;
+};
 
-	struct StopHasher {
-		std::hash<Stop*> hasher;
-		size_t operator()(const std::pair<Stop*, Stop*>& stops) const;
-	};
+struct Stop {
+    std::string name;
+    geo::Coordinates coordinates = {0, 0};
+    std::set<std::string_view> buses;
+    graph::VertexId vertex_id;
+};
 
-	struct Route {
-		Route() {}
-		Route(const std::string& name, RouteType type_route, std::vector<Stop*>& route);
-		friend bool operator==(const Route& lhs, const Route& rhs);
-
-		std::string name_;
-		RouteType type_route_ = RouteType::UNKNOWN;
-		std::vector<Stop*> stops_;
-	};
-}//namespace domain
+} //tr_cat

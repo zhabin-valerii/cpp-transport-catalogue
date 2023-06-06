@@ -1,92 +1,61 @@
 #pragma once
 
-#include "graph.h"
-#include "router.h"
 #include "transport_catalogue.h"
+#include "router.h"
+#include "request_handler.h"
 
 #include <memory>
-#include <optional>
-#include <string>
-#include <string_view>
-#include <vector>
-#include <unordered_map>
+#include <set>
+#include <exception>
+#include <map>
 
-namespace transport_router {
-	constexpr static double KMH_TO_MMIN = 1000.0 / 60.0;
+namespace tr_cat {
 
-	struct RouteWeight {
-		std::string_view bus_name;
-		double total_time = 0;
-		int span_count = 0;
-	};
+namespace router {
 
-	bool operator<(const RouteWeight& lhs, const RouteWeight& rhs);
-	bool operator>(const RouteWeight& lhs, const RouteWeight& rhs);
-	RouteWeight operator+(const RouteWeight& lhs, const RouteWeight& rhs);
+struct RoutingSettings {
+    uint32_t bus_wait_time = 0;
+    uint32_t bus_velocity = 0;
+};
 
-	class TransportRouter {
-	public:
-
-		using Graph = graph::DirectedWeightedGraph<RouteWeight>;
-		using StopsById = std::unordered_map<size_t, const domain::Stop*>;
-		using IdsByStopName = std::unordered_map<std::string_view, size_t>;
-		using Router = graph::Router<RouteWeight>;
+struct EdgeInfo {
+    const Stop* stop;
+    const Bus* bus;
+    uint32_t count;
+};
 
 
-		struct RoutingSettings {
-			int wait_time = 0;
-			double velocity = 100;
-		};
+struct CompletedRoute {
+    struct Line {
+        const Stop* stop; 
+        const Bus* bus; 
+        double wait_time;
+        double run_time;
+        uint32_t count_stops;
+    };
+    double total_time;
+    std::vector<Line> route;
+};
 
-		struct RouteEdge {
-			std::string_view bus_name;
-			std::string_view stop_from;
-			std::string_view stop_to;
-			double total_time = 0;
-			int span_count = 0;
-		};
+class TransportRouter  {
+public:
 
-		using TransportRoute = std::vector<RouteEdge>;
+    explicit TransportRouter (const aggregations::TransportCatalogue& catalog) :catalog_(catalog){}
 
-		TransportRouter(const transport_catalogue::TransportCatalogue& catalogue,
-			const RoutingSettings& settings);
+    std::optional<CompletedRoute> ComputeRoute (graph::VertexId from, graph::VertexId to);
+    void CreateGraph(bool create_router = true);
+    void SetSettings(RoutingSettings&& settings) {routing_settings_ = settings;}
+    transport_catalog_serialize::Router Serialize (bool with_graph = false) const;
+    bool Deserialize(transport_catalog_serialize::Router& router_data, bool with_graph = false);
 
-		std::optional<TransportRoute>
-			BuildRoute(const std::string& from, const std::string& to);
+private:
+    RoutingSettings routing_settings_;
+    graph::DirectedWeightedGraph<double> graph_;
+    const aggregations::TransportCatalogue& catalog_;
+    std::unordered_map<graph::EdgeId, EdgeInfo> edges_;
+    std::unique_ptr<graph::Router<double>> router_;
+};
 
-		void InitRouter();
-		void InternalInit();
+}//interface
 
-		RoutingSettings& GetSettings();
-		const RoutingSettings& GetSettings() const;
-
-		Graph& GetGraph();
-		const Graph& GetGraph() const;
-
-		std::unique_ptr<Router>& GetRouter();
-		const std::unique_ptr<Router>& GetRouter() const;
-
-		StopsById& GetStopsById();
-		const StopsById& GetStopsById() const;
-
-		IdsByStopName& GetIdsByStopName();
-		const IdsByStopName& GetIdsByStopName() const;
-
-	private:
-		size_t CountStops();
-		graph::Edge<RouteWeight> MakeEdge(const domain::Route* route, int stop_from_index, int stop_to_index);
-		double ComputeRouteTime(const domain::Route* route, int stop_from_index, int stop_to_index);
-		void BuildEges();
-
-		bool is_initialized_ = false;
-		
-		const transport_catalogue::TransportCatalogue& catalogue_;
-		RoutingSettings settings_;
-
-		StopsById stops_by_id_;
-		IdsByStopName id_by_stop_name_;
-		Graph graph_;
-		mutable std::unique_ptr<Router> router_;
-		
-	};
-}
+}//tr_cat
