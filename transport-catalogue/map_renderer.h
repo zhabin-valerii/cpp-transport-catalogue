@@ -113,11 +113,13 @@ public:
     MapRenderer(const aggregations::TransportCatalogue& catalog)
     :catalog_(catalog) {}
 
-    transport_catalog_serialize::RenderSettings Serialize() const;
-    bool Deserialize (transport_catalog_serialize::RenderSettings& settings);
+    //bool Deserialize (transport_catalog_serialize::RenderSettings& settings);
 
     void SetRenderSettings(RenderSettings&& settings) {settings_ = settings;}
     void Render(std::ostream& out);
+
+    RenderSettings GetSettings();
+    RenderSettings& GetSettingsRef();
 
 private:
     const aggregations::TransportCatalogue& catalog_;

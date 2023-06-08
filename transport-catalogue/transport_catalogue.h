@@ -23,6 +23,21 @@ namespace tr_cat {
 namespace aggregations {
 using namespace std::string_literals;
 
+class DistanceHasher {
+public:
+    size_t operator() (const std::pair<const Stop*, const Stop*> element) const {
+        const size_t shift = (size_t)log2(1 + sizeof(Stop));
+        const size_t result = (size_t)(element.first) >> shift;
+        return result + ((size_t)(element.second) >> shift) * 37;
+    }
+};
+class DistanceCompare {
+public:
+    bool operator() (const std::pair<const Stop*, const Stop*> lhs, const std::pair<const Stop*, const Stop*> rhs) const {
+        return lhs.first == rhs.first && rhs.second == lhs.second;
+    }
+};
+
 class TransportCatalogue {
 public:
     void AddStop (const std::string_view name, geo::Coordinates coords);
@@ -36,24 +51,13 @@ public:
     auto end() const {return sorted_buses_.end();}
     size_t size() const {return sorted_buses_.size();}
     size_t empty() const {return sorted_buses_.empty();}
-    transport_catalog_serialize::Catalog Serialize () const;
-    bool Deserialize (transport_catalog_serialize::Catalog& catalog);
     std::vector<std::string_view> GetSortedStopsNames() const;
+    std::vector<const Stop*> SortStops() const;
+    std::deque<Bus> GetBuses();
+    std::deque<Stop> GetStops();
+    std::unordered_map<std::pair<const Stop*, const Stop*>, int, DistanceHasher, DistanceCompare>
+        GetDistances();
 private:
-    class DistanceHasher {
-    public:
-        size_t operator() (const std::pair<const Stop*, const Stop*> element) const {
-            const size_t shift = (size_t)log2(1 + sizeof(Stop));
-            const size_t result = (size_t)(element.first) >> shift;
-            return result + ((size_t)(element.second) >> shift) * 37;
-        }
-    };
-    class DistanceCompare {
-    public:
-        bool operator() (const std::pair<const Stop*, const Stop*> lhs, const std::pair<const Stop*, const Stop*> rhs) const {
-            return lhs.first == rhs.first && rhs.second == lhs.second;
-        }
-    };
 
     std::unordered_map<std::pair<const Stop*, const Stop*>, int, DistanceHasher, DistanceCompare> distances_;
     std::deque<Stop> stops_data_;
@@ -67,7 +71,6 @@ private:
     double ComputeGeoRouteDistance (std::string_view name) const;
     Stop* FindStop (std::string_view name) const;
     Bus* FindBus (std:: string_view name)const;
-    std::vector<const Stop*> SortStops() const;
 };
 }//aggregations
 }//tr_cat

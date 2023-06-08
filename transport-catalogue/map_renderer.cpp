@@ -24,97 +24,12 @@ void MapRenderer::Render(ostream& out) {
     doc_to_render.Render(out);
 }
 
-transport_catalog_serialize::RenderSettings MapRenderer::Serialize() const {
-    struct ColorGetter {
-
-        optional<transport_catalog_serialize::Color> operator()(monostate) {return nullopt;}
-
-        optional<transport_catalog_serialize::Color> operator()(const string& name) {
-            transport_catalog_serialize::Color result_color;
-            result_color.set_str (name);
-            return result_color;
-        }
-
-        optional<transport_catalog_serialize::Color> operator() (const Rgb& rgb) {
-            transport_catalog_serialize::Color result_color;
-            transport_catalog_serialize::Rgb rgb_proto;
-            rgb_proto.set_r(static_cast<uint32_t>(rgb.red));
-            rgb_proto.set_g(static_cast<uint32_t>(rgb.green));
-            rgb_proto.set_b(static_cast<uint32_t>(rgb.blue));
-            *result_color.mutable_rgb() = rgb_proto;
-            return result_color;
-        }
-
-        optional<transport_catalog_serialize::Color> operator() (const Rgba& rgba) {
-            transport_catalog_serialize::Color result_color;
-            transport_catalog_serialize::Rgba rgba_proto;
-            rgba_proto.set_r(static_cast<uint32_t>(rgba.red));
-            rgba_proto.set_g(static_cast<uint32_t>(rgba.green));
-            rgba_proto.set_b(static_cast<uint32_t>(rgba.blue));
-            rgba_proto.set_a(rgba.opacity);
-            *result_color.mutable_rgba() = rgba_proto;
-            return result_color;
-        }
-
-    };
-    transport_catalog_serialize::RenderSettings settings_to_out;
-    settings_to_out.set_width(settings_.width);
-    settings_to_out.set_height(settings_.height);
-    settings_to_out.set_padding(settings_.padding);
-    settings_to_out.set_line_width(settings_.line_width);
-    settings_to_out.set_stop_radius(settings_.stop_radius);
-    settings_to_out.set_bus_label_font_size(settings_.bus_label_font_size);
-    settings_to_out.set_bus_label_offset_x(settings_.bus_label_offset.x);
-    settings_to_out.set_bus_label_offset_y(settings_.bus_label_offset.y);
-    settings_to_out.set_stop_label_font_size(settings_.stop_label_font_size);
-    settings_to_out.set_stop_label_offset_x(settings_.stop_label_offset.x);
-    settings_to_out.set_stop_label_offset_y(settings_.stop_label_offset.y);
-    *settings_to_out.mutable_underlayer_color() = *visit(ColorGetter(), settings_.underlayer_color);
-    settings_to_out.set_underlayer_width(settings_.underlayer_width);
-
-    for (auto& color : settings_.color_palette) {
-        settings_to_out.add_color_palette();
-        *settings_to_out.mutable_color_palette(settings_to_out.color_palette_size()-1) =
-                                                            *visit(ColorGetter{}, color);
-    }
-    return settings_to_out;
+RenderSettings MapRenderer::GetSettings() {
+    return settings_;
 }
 
-bool MapRenderer::Deserialize(transport_catalog_serialize::RenderSettings &settings_in) {
-    struct ColorGetter {
-        Color operator() (transport_catalog_serialize::Color& color) {
-            if (!color.str().empty()) {
-                return color.str();
-            }
-            if (color.has_rgb()) {
-                transport_catalog_serialize::Rgb rgb = *color.mutable_rgb();
-                return Rgb{rgb.r(), rgb.g(), rgb.b()};
-            }
-            if (color.has_rgba()) {
-                transport_catalog_serialize::Rgba rgba = *color.mutable_rgba();
-                return Rgba{rgba.r(), rgba.g(), rgba.b(), rgba.a()};
-            }
-            return monostate();
-        }
-    };
-    settings_.width = settings_in.width();
-    settings_.height = settings_in.height();
-    settings_.padding = settings_in.padding();
-    settings_.line_width = settings_in.line_width();
-    settings_.stop_radius = settings_in.stop_radius();
-    settings_.bus_label_font_size = settings_in.bus_label_font_size();
-    settings_.bus_label_offset = {settings_in.bus_label_offset_x(),
-                                  settings_in.bus_label_offset_y()};
-    settings_.stop_label_font_size = settings_in.stop_label_font_size();
-    settings_.stop_label_offset = {settings_in.stop_label_offset_x(),
-                                   settings_in.stop_label_offset_y()};
-    settings_.underlayer_color = ColorGetter()(*settings_in.mutable_underlayer_color());
-    settings_.underlayer_width = settings_in.underlayer_width();
-
-    for (int i = 0; i < settings_in.color_palette_size(); ++i) {
-        settings_.color_palette.push_back(ColorGetter()(*settings_in.mutable_color_palette(i)));
-    }
-    return true;
+RenderSettings& MapRenderer::GetSettingsRef() {
+    return settings_;
 }
 
 unordered_set<geo::Coordinates, CoordinatesHasher> MapRenderer::CollectCoordinates () const {

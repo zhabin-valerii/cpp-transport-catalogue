@@ -102,93 +102,6 @@ int TransportCatalogue::GetDistance(const Stop* lhs, const Stop* rhs) const{
     return static_cast<int>(geo::ComputeDistance(lhs->coordinates, rhs->coordinates));
 }
 
-transport_catalog_serialize::Catalog TransportCatalogue::Serialize() const {
-    std::vector<const Stop*> sorted_stops = SortStops();
-    //-------buses---------
-    transport_catalog_serialize::BusList bus_list;
-    for (const Bus& bus : buses_data_) {
-        transport_catalog_serialize::Bus bus_to_out;
-        bus_to_out.set_name(bus.name);
-        bus_to_out.set_is_ring(bus.is_ring);
-        if (!bus.stops.empty ()) {
-            //если некольцевой маршрут, записывается только половина остановок
-            int stops_count = bus.is_ring ? bus.stops.size() : bus.stops.size()/2+1;
-
-            //список остановок состоит из их порядковых номеров в отсортированном массиве
-            for (int i = 0; i < stops_count; ++i) {
-                const Stop* stop = bus.stops[i];
-                int pos = std::lower_bound(sorted_stops.begin(), sorted_stops.end(),
-                                           stop, [](const Stop* lhs, const Stop* rhs){
-                                                return lhs->name < rhs->name;}) - sorted_stops.begin();
-                bus_to_out.add_stop(pos);
-            }
-        }
-        bus_list.add_bus();
-        *bus_list.mutable_bus(bus_list.bus_size()-1) = bus_to_out;
-    }
-    //--------stops----------
-    transport_catalog_serialize::StopList stop_list;
-    for (const Stop& stop : stops_data_) {
-        transport_catalog_serialize::Stop stop_to_out;
-        stop_to_out.set_name(stop.name);
-        stop_to_out.set_latitude(stop.coordinates.lat);
-        stop_to_out.set_longitude(stop.coordinates.lng);
-        stop_list.add_stop();
-        *stop_list.mutable_stop(stop_list.stop_size()-1) = stop_to_out;
-    }
-    //-------distances--------
-    transport_catalog_serialize::DistanceList distance_list;
-    for (const auto&[key, value] : distances_) {
-        transport_catalog_serialize::Distance distance_to_out;
-        int pos = std::lower_bound(sorted_stops.begin(), sorted_stops.end(),
-                                   key.first, [](const Stop* lhs, const Stop* rhs){
-                                        return lhs->name < rhs->name;}) - sorted_stops.begin();
-        distance_to_out.set_index_from(pos);
-        pos = std::lower_bound(sorted_stops.begin(), sorted_stops.end(),
-                               key.second, [](const Stop* lhs, const Stop* rhs){
-                                    return lhs->name < rhs->name;}) - sorted_stops.begin();
-        distance_to_out.set_index_to(pos);
-        distance_to_out.set_distance(value);
-        distance_list.add_distance();
-        *distance_list.mutable_distance(distance_list.distance_size()-1) = distance_to_out;
-    }
-    //----------------------
-    transport_catalog_serialize::Catalog catalog;
-    *catalog.mutable_bus_list () = bus_list;
-    *catalog.mutable_stop_list () = stop_list;
-    *catalog.mutable_distance_list () = distance_list;
-    return catalog;
-}
-
-bool TransportCatalogue::Deserialize(transport_catalog_serialize::Catalog& catalog) {
-    //------------stops-----------------
-    transport_catalog_serialize::StopList stop_list = catalog.stop_list ();
-    for (int i = 0; i < stop_list.stop_size(); ++i) {
-        const transport_catalog_serialize::Stop& stop = stop_list.stop(i);
-        AddStop(stop.name(), {stop.latitude(), stop.longitude()});
-    }
-
-    std::vector<const Stop*> sorted_stops = SortStops();
-    //------------distances-------------
-    transport_catalog_serialize::DistanceList distance_list = catalog.distance_list ();
-    for (int i = 0; i < distance_list.distance_size (); ++i) {
-        const transport_catalog_serialize::Distance distance = distance_list.distance (i);
-        distances_[{sorted_stops[distance.index_from ()], sorted_stops[distance.index_to ()]}] = distance.distance ();
-    }
-    //-----------buses------------------
-    transport_catalog_serialize::BusList bus_list = catalog.bus_list ();
-    for (int i = 0; i < bus_list.bus_size(); ++i) {
-        const transport_catalog_serialize::Bus& bus_from_input = bus_list.bus(i);
-        std::vector<std::string_view> stops_in_bus;
-        stops_in_bus.reserve(bus_from_input.stop_size());
-        for (int i = 0; i < bus_from_input.stop_size(); ++i) {
-            stops_in_bus.push_back(sorted_stops[bus_from_input.stop(i)]->name);
-        }
-        AddBus(bus_from_input.name(), stops_in_bus, bus_from_input.is_ring());
-    }
-    return true;
-}
-
 std::vector<std::string_view> TransportCatalogue::GetSortedStopsNames() const {
     std::vector<std::string_view> result;
     result.reserve(stops_data_.size());
@@ -197,6 +110,19 @@ std::vector<std::string_view> TransportCatalogue::GetSortedStopsNames() const {
     }
     std::sort(result.begin(), result.end());
     return result;
+}
+
+std::deque<Bus> TransportCatalogue::GetBuses() {
+    return buses_data_;
+}
+
+std::deque<Stop> TransportCatalogue::GetStops() {
+    return stops_data_;
+}
+
+std::unordered_map<std::pair<const Stop*, const Stop*>, int, DistanceHasher, DistanceCompare>
+TransportCatalogue::GetDistances() {
+    return distances_;
 }
 
 //--------------------------private-------------------------------------

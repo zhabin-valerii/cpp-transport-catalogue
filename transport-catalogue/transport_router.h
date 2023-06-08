@@ -24,7 +24,6 @@ struct EdgeInfo {
     uint32_t count;
 };
 
-
 struct CompletedRoute {
     struct Line {
         const Stop* stop; 
@@ -45,9 +44,15 @@ public:
     std::optional<CompletedRoute> ComputeRoute (graph::VertexId from, graph::VertexId to);
     void CreateGraph(bool create_router = true);
     void SetSettings(RoutingSettings&& settings) {routing_settings_ = settings;}
-    transport_catalog_serialize::Router Serialize (bool with_graph = false) const;
-    bool Deserialize(transport_catalog_serialize::Router& router_data, bool with_graph = false);
 
+    const RoutingSettings& GetSettings();
+    RoutingSettings& GetSettingsRef();
+    const std::unique_ptr<graph::Router<double>>& GetRouter();
+    std::unique_ptr<graph::Router<double>>& GetRouterRef();
+    const graph::DirectedWeightedGraph<double>& GetGraph();
+    graph::DirectedWeightedGraph<double>& GetGraphRef();
+    const std::unordered_map<graph::EdgeId, EdgeInfo>& GetEdges();
+    std::unordered_map<graph::EdgeId, EdgeInfo>& GetEdgesRef();
 private:
     RoutingSettings routing_settings_;
     graph::DirectedWeightedGraph<double> graph_;
